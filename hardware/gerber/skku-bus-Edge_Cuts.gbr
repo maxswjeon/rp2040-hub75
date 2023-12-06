@@ -1,0 +1,23 @@
+%TF.GenerationSoftware,KiCad,Pcbnew,7.0.6*%
+%TF.CreationDate,2023-12-03T11:12:56+09:00*%
+%TF.ProjectId,skku-bus,736b6b75-2d62-4757-932e-6b696361645f,rev?*%
+%TF.SameCoordinates,Original*%
+%TF.FileFunction,Profile,NP*%
+%FSLAX46Y46*%
+G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
+G04 Created by KiCad (PCBNEW 7.0.6) date 2023-12-03 11:12:56*
+%MOMM*%
+%LPD*%
+G01*
+G04 APERTURE LIST*
+%TA.AperFunction,Profile*%
+%ADD10C,0.100000*%
+%TD*%
+G04 APERTURE END LIST*
+D10*
+X80000000Y-60000000D02*
+X150000000Y-60000000D01*
+X150000000Y-150000000D01*
+X80000000Y-150000000D01*
+X80000000Y-60000000D01*
+M02*

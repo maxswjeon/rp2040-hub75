@@ -1,0 +1,23 @@
+file(GLOB FILES *.c *.cpp *.h *.hpp *.pio)
+
+add_executable(${PROJECT} ${FILES})
+
+target_link_libraries(${PROJECT}
+    pico_stdlib
+    pico_multicore
+    hardware_i2c
+    hardware_spi
+    hardware_dma
+    hardware_clocks
+    hardware_pio
+)
+
+target_include_directories(${PROJECT} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+pico_enable_stdio_usb(${PROJECT} 1)
+pico_enable_stdio_uart(${PROJECT} 1)
+pico_add_extra_outputs(${PROJECT})
+
+add_subdirectory(hub75)
