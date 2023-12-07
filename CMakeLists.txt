@@ -12,6 +12,8 @@ else()
     message("PICO_SDK_PATH already set ('${PICO_SDK_PATH}')")
 endif()
 
+set(PICO_BOARD arduino_nano_rp2040_connect)
+
 #
 # Include pico_sdk_import.cmake from pico-sdk
 #
