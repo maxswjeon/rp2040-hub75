@@ -14,7 +14,6 @@
 #include "html.hpp"
 #include "flash.h"
 #include "Neodgm.h"
-
 #include "WiFi.h"
 
 #define FLASH_TARGET_OFFSET (PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE)
@@ -107,14 +106,14 @@ void setup_wifi()
     sprintf(ssid, "%s%04d", SSID_PREFIX, ssid_postfix);
     sprintf(psk, "%08d", rand() % 100000000);
 
-    panel->printString(0, -3, "Connect to WiFi");
-    panel->printString(0, 10, "to configure.");
+    panel->printString(0, 0, "Connect to WiFi");
+    panel->printString(0, 16, "to configure.");
     panel->printString(0, 32, "SSID:");
     panel->printString(40, 32, ssid);
     panel->printString(0, 48, "PSK: ");
     panel->printString(40, 48, psk);
 
-    WiFi.beginAP(ssid, psk);
+    // WiFi.beginAP(ssid, psk);
 }
 
 void connect_wifi()

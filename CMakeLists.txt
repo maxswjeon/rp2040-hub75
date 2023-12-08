@@ -67,11 +67,19 @@ project(${PROJECT} C CXX ASM)
 pico_sdk_init()
 
 #
-# Initialize mbed-os (for Arduino Nano RP2040 Connect)
+# Initialize Arduino Core API (for Arduino Nano RP2040 Connect)
 #
-add_library(mbed-os STATIC ${ARDUINO_CORE_MBED_PATH}/cores/arduino)
-set_target_properties(mbed-os PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(mbed-os PUBLIC ${ARDUINO_CORE_MBED_PATH}/cores/arduino)
+add_library(arduino_core_api STATIC ${ARDUINO_CORE_API_PATH}/api)
+set_target_properties(arduino_core_api PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(arduino_core_api PUBLIC ${ARDUINO_CORE_API_PATH}/src)
+
+
+#
+# Initialize WiFiNINA (for Arduino Nano RP2040 Connect)
+#
+add_library(wifinina STATIC ${WIFININA_PATH}/src)
+set_target_properties(wifinina PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(wifinina PUBLIC ${WIFININA_PATH}/src)
 
 # 
 # Language Standards
@@ -80,8 +88,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(src)
-target_include_directories(${PROJECT} PRIVATE include ${ARDUINO_CORE_MBED_PATH}/cores/arduino)
+target_include_directories(${PROJECT} PRIVATE include ${ARDUINO_CORE_API_PATH}/api ${WIFININA_PATH}/src)
 target_link_libraries(${PROJECT}
+    pico_runtime
     pico_stdlib
     pico_multicore
     pico_rand
@@ -92,7 +101,8 @@ target_link_libraries(${PROJECT}
     hardware_clocks
     hardware_pio
     hardware_flash
-    mbed-os
+    wifinina
+    arduino_core_api
 )
 
 if (CMAKE_COMPILER_IS_GNUCC)

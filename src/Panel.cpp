@@ -2,7 +2,6 @@
 #include "pico/malloc.h"
 
 #include <stdio.h>
-#include <string.h>
 
 static const uint8_t _cho1[] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 3, 3, 1, 2, 4, 4, 4, 2, 1, 3, 0};
 static const uint8_t _cho2[] = {5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 7, 7, 6, 6, 7, 7, 7, 6, 6, 7, 5};

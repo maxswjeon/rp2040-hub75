@@ -1,8 +1,8 @@
 #ifndef _SKKU_BUS_PANEL_H_
 #define _SKKU_BUS_PANEL_H_
 
-#include "stdlib.h"
-#include "string.h"
+#include <stdlib.h>
+#include <string.h>
 
 #include "pico/stdlib.h"
 
