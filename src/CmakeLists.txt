@@ -12,11 +12,16 @@ target_link_libraries(${PROJECT}
     hardware_dma
     hardware_clocks
     hardware_pio
+    hardware_flash
 )
 
 target_include_directories(${PROJECT} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+if ( CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar")
+endif()
 
 pico_enable_stdio_usb(${PROJECT} 1)
 pico_enable_stdio_uart(${PROJECT} 0)

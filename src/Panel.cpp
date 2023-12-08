@@ -3,11 +3,12 @@
 
 #include <stdio.h>
 
+static const uint8_t _cho1[] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 3, 3, 1, 2, 4, 4, 4, 2, 1, 3, 0};
+static const uint8_t _cho2[] = {5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 7, 7, 6, 6, 7, 7, 7, 6, 6, 7, 5};
+static const uint8_t _jong[] = {0, 2, 0, 2, 1, 2, 1, 2, 3, 0, 2, 1, 3, 3, 1, 2, 1, 3, 3, 1, 1};
+
 Panel::Panel(uint16_t width, uint16_t height, uint8_t rotation)
 {
-    _virtual_width = width;
-    _virtual_height = height;
-
     _width = width;
     _height = height;
     _count = 1;
@@ -21,7 +22,7 @@ Panel::Panel(uint16_t width, uint16_t height, uint8_t rotation)
     _panels->max_x = width - 1;
     _panels->max_y = height - 1;
     _panels->rotation = rotation;
-#ifdef _SKKU_BUS_PIO
+#ifdef PANEL_PIO
     _buffer = (uint8_t *)malloc(width * height);
 #endif
 
@@ -29,20 +30,20 @@ Panel::Panel(uint16_t width, uint16_t height, uint8_t rotation)
     {
         _data[i] = 0;
 
-#ifdef _SKKU_BUS_PIO
+#ifdef PANEL_PIO
         _buffer[i] = 0;
 #endif
     }
 
-#ifdef _SKKU_BUS_PIO
+#ifdef PANEL_PIO
 #else
     _init_gpio();
-    _shift(0, 0, 64);
+    _shift(0, 0, width);
     tick();
 #endif
 }
 
-Panel::Panel(uint16_t width, uint16_t height, uint8_t count, PanelConfig *configs)
+Panel::Panel(uint16_t width, uint16_t height, uint8_t count, const PanelConfig *configs)
 {
     _panels = (PanelTable *)malloc(count * sizeof(PanelTable));
 
@@ -99,8 +100,6 @@ Panel::Panel(uint16_t width, uint16_t height, uint8_t count, PanelConfig *config
         ti->max_y -= min_y;
     }
 
-    _virtual_width = max_x - min_x;
-    _virtual_height = max_y - min_y;
     _width = width;
     _height = height;
 
@@ -108,7 +107,26 @@ Panel::Panel(uint16_t width, uint16_t height, uint8_t count, PanelConfig *config
 
     // Virtual Coordinate Space
     _data = (uint8_t *)malloc(_width * _height * count);
-    memset(_data, 0, _width * _height * count);
+
+#ifdef PANEL_PIO
+    _buffer = (uint8_t *)malloc(width * height);
+#endif
+
+    for (int i = 0; i < width * height; i++)
+    {
+        _data[i] = 0;
+
+#ifdef PANEL_PIO
+        _buffer[i] = 0;
+#endif
+    }
+
+#ifdef PANEL_PIO
+#else
+    _init_gpio();
+    _shift(0, 0, width * count);
+    tick();
+#endif
 }
 
 void Panel::_init_gpio()
@@ -142,7 +160,7 @@ void Panel::_init_gpio()
     gpio_set_dir(LAT, GPIO_OUT);
 }
 
-#ifdef _SKKU_BUS_PIO
+#ifdef PANEL_PIO
 #else
 inline void Panel::_shift(uint8_t color1, uint8_t color2)
 {
@@ -153,9 +171,9 @@ inline void Panel::_shift(uint8_t color1, uint8_t color2)
     gpio_put(G1, (color2 & 0b010) >> 1);
     gpio_put(B1, (color2 & 0b001) >> 0);
     gpio_put(CLK, 1);
-    sleep_us(2);
+    sleep_us(1);
     gpio_put(CLK, 0);
-    sleep_us(2);
+    sleep_us(1);
 }
 
 inline void Panel::_shift(uint8_t color1, uint8_t color2, uint32_t count)
@@ -169,9 +187,9 @@ inline void Panel::_shift(uint8_t color1, uint8_t color2, uint32_t count)
     for (int i = 0; i < count; i++)
     {
         gpio_put(CLK, 1);
-        sleep_us(2);
+        sleep_us(1);
         gpio_put(CLK, 0);
-        sleep_us(2);
+        sleep_us(1);
     }
 }
 #endif
@@ -231,9 +249,9 @@ void Panel::setPixel(uint32_t x, uint32_t y, bool r, bool g, bool b)
 
 void Panel::clear()
 {
-    for (int i = 0; i < _virtual_width * _virtual_height; i++)
+    for (int i = 0; i < _width * _height * _count; i++)
     {
-#ifdef _SKKU_BUS_PIO
+#ifdef PANEL_PIO
         _buffer[i] = 0;
 #else
         _data[i] = 0;
@@ -241,7 +259,128 @@ void Panel::clear()
     }
 }
 
-#ifdef _SKKU_BUS_PIO
+void Panel::setFont(const uint8_t *font, const uint8_t *font_ko)
+{
+    _font = font;
+    _font_ko = font_ko;
+}
+
+int Panel::printChar(int32_t x, int32_t y, uint32_t c, uint8_t color)
+{
+    if (c >= 0x20 && c <= 0x7E)
+    {
+        if (!_font)
+        {
+            printf("English Font not set\n");
+            return 0;
+        }
+
+        for (uint32_t i = 0; i < 8 * 16; ++i)
+        {
+            if (_font[(c - 0x20) * 16 + i / 8] & (1 << (7 - (i % 8))))
+            {
+                setPixel(x + (i % 8), y + (i / 8), color);
+            }
+        }
+        return 8;
+    }
+    else if (c >= 0xAC00 && c <= 0xD7A3)
+    {
+        if (!_font_ko)
+        {
+            printf("Korean not set\n");
+            return 0;
+        }
+
+        uint8_t index_cho = (c - 0xAC00) / (21 * 28);
+        uint8_t index_jung = ((c - 0xAC00) % (21 * 28)) / 28;
+        uint8_t index_jong = (c - 0xAC00) % 28;
+
+        if (index_jong == 0)
+        {
+            uint8_t cho_index0 = 0;
+            uint8_t cho_index1 = _cho1[index_jung];
+            uint8_t cho_index2 = index_cho;
+
+            uint8_t jung_index0 = 19 * 8;
+            uint8_t jung_index1 = index_cho == 1 || index_cho == 24 ? 0 : 1;
+            uint8_t jung_index2 = index_jung;
+
+            uint32_t cho = cho_index0 + 19 * cho_index1 + cho_index2;
+            uint32_t jung = jung_index0 + 21 * jung_index1 + jung_index2;
+
+            for (uint32_t i = 0; i < 16 * 16; ++i)
+            {
+                uint8_t flag = (_font_ko[cho * 32 + i / 8] | _font_ko[jung * 32 + i / 8]) & (1 << (7 - (i % 8))) ? 1 : 0;
+                setPixel(x + (i % 16), y + (i / 16), flag * color);
+            }
+        }
+        else
+        {
+            uint8_t cho_index0 = 0;
+            uint8_t cho_index1 = _cho2[index_jung];
+            uint8_t cho_index2 = index_cho;
+
+            uint8_t jung_index0 = 19 * 8;
+            uint8_t jung_index1 = index_cho == 1 || index_cho == 24 ? 2 : 3;
+            uint8_t jung_index2 = index_jung;
+
+            uint8_t jong_index0 = 19 * 8 + 21 * 4;
+            uint8_t jong_index1 = _jong[index_jung];
+            uint8_t jong_index2 = index_jong - 1;
+
+            uint32_t cho = cho_index0 + 19 * cho_index1 + cho_index2;
+            uint32_t jung = jung_index0 + 21 * jung_index1 + jung_index2;
+            uint32_t jong = jong_index0 + 27 * jong_index1 + jong_index2;
+
+            for (uint32_t i = 0; i < 16 * 16; ++i)
+            {
+                uint8_t flag = (_font_ko[cho * 32 + i / 8] | _font_ko[jung * 32 + i / 8] | _font_ko[jong * 32 + i / 8]) & (1 << (7 - (i % 8))) != 0 ? 1 : 0;
+                setPixel(x + (i % 16), y + (i / 16), flag * color);
+            }
+        }
+        return 16;
+    }
+    else
+    {
+        printf("Out of Range Character!\n");
+        if (!_font)
+        {
+            printf("English Font not set\n");
+            return 0;
+        }
+
+        c = 0x3F;
+        for (int i = 0; i < 8 * 16; ++i)
+        {
+            uint8_t flag = _font[(c - 0x20) * 16 + i / 8] & (1 << (7 - (i % 8))) ? 1 : 0;
+            setPixel(x + (i % 4), y + (i / 4), flag * color);
+        }
+        return 8;
+    }
+}
+
+void Panel::printString(int32_t x, int32_t y, const char *str, uint8_t color)
+{
+    uint32_t cur_x = x;
+    uint32_t cur_y = y;
+
+    while (*str)
+    {
+        if (*str == '\n')
+        {
+            cur_x = x;
+            cur_y += 16;
+        }
+        else
+        {
+            cur_x += printChar(cur_x, cur_y, *str, color);
+        }
+        ++str;
+    }
+}
+
+#ifdef PANEL_PIO
 void Panel::flush()
 {
     uint8_t *temp = _data;
@@ -253,9 +392,9 @@ void Panel::tick()
 {
     int half = _height / 2;
 
-    for (int y = 0; y < half; ++y)
+    for (uint32_t y = 0; y < half; ++y)
     {
-        for (int x = 0; x < _width * _count; ++x)
+        for (uint32_t x = 0; x < _width * _count; ++x)
         {
             _shift(_data[y * _width * _count + x], _data[(y + half) * _width * _count + x]);
         }
@@ -278,23 +417,7 @@ Panel::~Panel()
 
     free(_data);
 
-#ifdef _SKKU_BUS_PIO
+#ifdef PANEL_PIO
     free(_buffer);
 #endif
-}
-
-void Panel::dump()
-{
-    for (int y = 0; y < _height; ++y)
-    {
-        for (int x = 0; x < _width * _count; ++x)
-        {
-            printf("%d ", _data[y * _width * _count + x]);
-            if (x % _width == _width - 1)
-                printf("| ");
-        }
-        printf("\n");
-    }
-
-    printf("\n");
 }
