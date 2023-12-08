@@ -2,6 +2,7 @@
 #include "pico/malloc.h"
 
 #include <stdio.h>
+#include <string.h>
 
 static const uint8_t _cho1[] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 3, 3, 1, 2, 4, 4, 4, 2, 1, 3, 0};
 static const uint8_t _cho2[] = {5, 5, 5, 5, 5, 5, 5, 5, 6, 7, 7, 7, 6, 6, 7, 7, 7, 6, 6, 7, 5};
@@ -14,7 +15,10 @@ Panel::Panel(uint16_t width, uint16_t height, uint8_t rotation)
     _count = 1;
 
     _data = (uint8_t *)malloc(width * height);
-    memset(_data, 0, _width * _height);
+    memset(_data, 0, width * _height);
+
+    _font = 0;
+    _font_ko = 0;
 
     _panels = (PanelTable *)malloc(sizeof(PanelTable));
     _panels->min_x = 0;
@@ -107,6 +111,9 @@ Panel::Panel(uint16_t width, uint16_t height, uint8_t count, const PanelConfig *
 
     // Virtual Coordinate Space
     _data = (uint8_t *)malloc(_width * _height * count);
+
+    _font = 0;
+    _font_ko = 0;
 
 #ifdef PANEL_PIO
     _buffer = (uint8_t *)malloc(width * height);
@@ -209,7 +216,6 @@ void Panel::setPixel(uint32_t x, uint32_t y, uint8_t color)
     // Out of Bounds
     if (panel - _panels == _count)
     {
-        printf("Out of Bounds\n");
         return;
     }
 
@@ -238,8 +244,6 @@ void Panel::setPixel(uint32_t x, uint32_t y, uint8_t color)
     }
 
     _data[py * _width * _count + px] = color;
-
-    printf("Set Pixel: (%d, %d) -> (%d, %d)\n", x, y, px, py);
 }
 
 void Panel::setPixel(uint32_t x, uint32_t y, bool r, bool g, bool b)
@@ -400,7 +404,7 @@ void Panel::tick()
         }
         gpio_put(OE, 1);
         gpio_put(LAT, 1);
-        sleep_us(2);
+        sleep_us(1);
         gpio_put(LAT, 0);
         gpio_put(A, (y & 0b0001) >> 0);
         gpio_put(B, (y & 0b0010) >> 1);

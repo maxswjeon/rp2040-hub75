@@ -1,0 +1,9 @@
+[submodule "libs/arduino-core-mbed"]
+	path = libs/arduino-core-mbed
+	url = https://github.com/arduino/ArduinoCore-mbed
+[submodule "libs/arduino-core-api"]
+	path = libs/arduino-core-api
+	url = https://github.com/arduino/ArduinoCore-API
+[submodule "libs/WiFiNINA"]
+	path = libs/WiFiNINA
+	url = https://github.com/arduino-libraries/WiFiNINA
