@@ -5,6 +5,8 @@ add_executable(${PROJECT} ${FILES})
 target_link_libraries(${PROJECT}
     pico_stdlib
     pico_multicore
+    pico_rand
+    pico_malloc
     hardware_i2c
     hardware_spi
     hardware_dma
