@@ -7,3 +7,6 @@
 [submodule "libs/WiFiNINA"]
 	path = libs/WiFiNINA
 	url = https://github.com/arduino-libraries/WiFiNINA
+[submodule "libs/ubxlib"]
+	path = libs/ubxlib
+	url = https://github.com/u-blox/ubxlib

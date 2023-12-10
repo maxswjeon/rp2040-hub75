@@ -10,15 +10,16 @@
 #include "hardware/flash.h"
 
 #include "pincfg.h"
-#include "Panel.h"
-#include "html.hpp"
+#include "hub75/Panel.h"
+#include "html/html.hpp"
 #include "flash.h"
 #include "Neodgm.h"
+
 #include "WiFi.h"
 
 #define FLASH_TARGET_OFFSET (PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE)
 
-#define SSID_PREFIX "SKKUP-"
+#define SSID_PREFIX "SKKU-"
 static_assert(strlen(SSID_PREFIX) <= 7, "SSID_PREFIX must be less than 6 characters");
 
 uint8_t flash_target_buffer[FLASH_SECTOR_SIZE];
@@ -113,7 +114,8 @@ void setup_wifi()
     panel->printString(0, 48, "PSK: ");
     panel->printString(40, 48, psk);
 
-    // WiFi.beginAP(ssid, psk);
+    bool result = wifi_set_ap(ssid, strlen(ssid), 1);
+    printf("WiFi Setup Result: %d\n", result);
 }
 
 void connect_wifi()
@@ -156,6 +158,8 @@ void driver()
 
 int main()
 {
+    stdio_init_all();
+
     // Initialize the Panel
     panel = new Panel(PANEL_WIDTH, PANEL_HEIGHT, 4, configs);
     panel->clear();
@@ -176,6 +180,11 @@ int main()
     // }
 
     init_flash();
+
+    wifi_init();
+    wifi_gpio_init(LEDR);
+    wifi_gpio_set_dir(LEDR, OUTPUT);
+    wifi_gpio_put(LEDR, 1);
 
     connect_wifi();
 }
